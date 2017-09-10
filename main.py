@@ -21,6 +21,16 @@ class CameraParameters():
         self.cx = cx
         self.cy = cy
 
+    @property
+    def cameraMatrix(self):
+        matrix = np.array([[self.fx, 0.0, self.cx],
+                           [0.0, self.fx, self.cy],
+                           [0.0, 0.0, 1.0]])
+        return matrix
+
+    def __call__(self):
+        return self.cameraMatrix
+
 
 class Dataset():
     def __init__(self):
@@ -34,33 +44,32 @@ class Dataset():
         wildcard = os.path.join(self.path, '*' + extension)
         self.image_count = len(glob.glob(wildcard))
 
+    def loadCameraParameters(self, calibfile):
+        with open(calibfile, 'r') as f:
+            line = f.readline()
+            part = line.split()
+            param = CameraParameters(part[1], part[6], part[3], part[7])
+
+            return param
+
 
 class KittiDataset(Dataset):
     def __init__(self, path):
         self.image_format_left = '{:06d}.png'
         self.path = path
+        self.calibfile = os.path.join(self.path, 'calib.txt')
         self.count_image()
 
 
 dataset_dict = {'kitti': KittiDataset}
 
 
-def loadCameraParameters(calibfile):
-    with open(calibfile, 'r') as f:
-        line = f.readline()
-        part = line.split()
-        param = CameraParameters(part[1], part[6], part[3], part[7])
-
-        return param
-
-
 def main():
     options = parseArguments()
-
-    # if options.calibfile:
-    # camParam = loadCameraParameters(options.calibfile)
-
     dataset = dataset_dict[options.dataset](options.path)
+
+    if options.calibfile:
+        camParam = loadCameraParameters(dataset.calibfile)
 
     feature_detector = cv2.FastFeatureDetector_create(threshold=25,
                                                       nonmaxSuppression=True)
@@ -73,6 +82,8 @@ def main():
     current_rot = np.eye(3)
 
     plt.gca().set_aspect('equal', adjustable='box')
+
+    print(dataset.image_count)
 
     prev_image = None
     for index in xrange(dataset.image_count):
