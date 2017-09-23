@@ -68,9 +68,6 @@ def main():
     options = parseArguments()
     dataset = dataset_dict[options.dataset](options.path)
 
-    if options.calibfile:
-        camParam = loadCameraParameters(dataset.calibfile)
-
     feature_detector = cv2.FastFeatureDetector_create(threshold=25,
                                                       nonmaxSuppression=True)
 
