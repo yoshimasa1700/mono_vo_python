@@ -37,7 +37,7 @@ def main():
 
     plt.gca().set_aspect('equal', adjustable='box')
 
-    print(dataset.image_count)
+    print("{} images found.".format(dataset.image_count))
 
     prev_image = None
     for index in xrange(dataset.image_count):
@@ -56,8 +56,6 @@ def main():
         points = np.array(map(lambda x: [x.pt], prev_keypoint),
                           dtype=np.float32)
 
-        # p0 = cv2.goodFeaturesToTrack(prev_image, mask=None, **feature_params)
-
         p1, st, err = cv2.calcOpticalFlowPyrLK(prev_image,
                                                image, points,
                                                None, **lk_params)
@@ -73,18 +71,12 @@ def main():
         current_pos += current_rot.dot(t)
         current_rot = R.dot(current_rot)
 
-        # print(E)
-        # print(t)
-        # print(R)
-        # print(current_pos[0][0])
-        # print(current_pos)
-
         plt.scatter(current_pos[0][0], current_pos[2][0])
         plt.pause(.01)
 
         img = cv2.drawKeypoints(image, keypoint, None)
 
-        cv2.imshow('image', image)
+        # cv2.imshow('image', image)
         cv2.imshow('feature', img)
         cv2.waitKey(1)
 
