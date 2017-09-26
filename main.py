@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+__author__ = "Masahiko Toyoshi"
+__copyright__ = "Copyright 2007, Masahiko Toyoshi."
+__license__ = "GPL"
+__version__ = "1.0.0"
+
 import argparse
 import cv2
 import numpy as np
