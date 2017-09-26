@@ -1,12 +1,19 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+__author__ = "Masahiko Toyoshi"
+__copyright__ = "Copyright 2007, Masahiko Toyoshi."
+__license__ = "GPL"
+__version__ = "1.0.0"
+
 import argparse
-import os
-import glob
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from dataset import create_dataset
 
 
-def parseArguments():
+def parse_argument():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', default='kitti')
     parser.add_argument('--path', required=True)
@@ -14,59 +21,9 @@ def parseArguments():
     return parser.parse_args()
 
 
-class CameraParameters():
-    def __init__(self, fx, fy, cx, cy):
-        self.fx = fx
-        self.fy = fy
-        self.cx = cx
-        self.cy = cy
-
-    @property
-    def cameraMatrix(self):
-        matrix = np.array([[self.fx, 0.0, self.cx],
-                           [0.0, self.fx, self.cy],
-                           [0.0, 0.0, 1.0]])
-        return matrix
-
-    def __call__(self):
-        return self.cameraMatrix
-
-
-class Dataset():
-    def __init__(self):
-        pass
-
-    def image_path_left(self, index):
-        return os.path.join(self.path, self.image_format_left).format(index)
-
-    def count_image(self):
-        extension = os.path.splitext(self.image_format_left)[-1]
-        wildcard = os.path.join(self.path, '*' + extension)
-        self.image_count = len(glob.glob(wildcard))
-
-    def loadCameraParameters(self, calibfile):
-        with open(calibfile, 'r') as f:
-            line = f.readline()
-            part = line.split()
-            param = CameraParameters(part[1], part[6], part[3], part[7])
-
-            return param
-
-
-class KittiDataset(Dataset):
-    def __init__(self, path):
-        self.image_format_left = '{:06d}.png'
-        self.path = path
-        self.calibfile = os.path.join(self.path, 'calib.txt')
-        self.count_image()
-
-
-dataset_dict = {'kitti': KittiDataset}
-
-
 def main():
-    options = parseArguments()
-    dataset = dataset_dict[options.dataset](options.path)
+    options = parse_argument()
+    dataset = create_dataset(options)
 
     feature_detector = cv2.FastFeatureDetector_create(threshold=25,
                                                       nonmaxSuppression=True)
@@ -80,7 +37,7 @@ def main():
 
     plt.gca().set_aspect('equal', adjustable='box')
 
-    print(dataset.image_count)
+    print("{} images found.".format(dataset.image_count))
 
     prev_image = None
     for index in xrange(dataset.image_count):
@@ -99,8 +56,6 @@ def main():
         points = np.array(map(lambda x: [x.pt], prev_keypoint),
                           dtype=np.float32)
 
-        # p0 = cv2.goodFeaturesToTrack(prev_image, mask=None, **feature_params)
-
         p1, st, err = cv2.calcOpticalFlowPyrLK(prev_image,
                                                image, points,
                                                None, **lk_params)
@@ -116,18 +71,12 @@ def main():
         current_pos += current_rot.dot(t)
         current_rot = R.dot(current_rot)
 
-        # print(E)
-        # print(t)
-        # print(R)
-        # print(current_pos[0][0])
-        # print(current_pos)
-
         plt.scatter(current_pos[0][0], current_pos[2][0])
         plt.pause(.01)
 
         img = cv2.drawKeypoints(image, keypoint, None)
 
-        cv2.imshow('image', image)
+        # cv2.imshow('image', image)
         cv2.imshow('feature', img)
         cv2.waitKey(1)
 
