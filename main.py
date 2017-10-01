@@ -40,6 +40,11 @@ def main():
     print("{} images found.".format(dataset.image_count))
 
     prev_image = None
+
+    valid_ground_truth = False
+    if dataset.ground_truth is not None:
+        valid_ground_truth = True
+    
     for index in xrange(dataset.image_count):
         # load image
         image = cv2.imread(dataset.image_path_left(index))
@@ -70,6 +75,14 @@ def main():
 
         current_pos += current_rot.dot(t)
         current_rot = R.dot(current_rot)
+
+        # get ground truth if eist.
+        if valid_ground_truth:
+            ground_truth = dataset.ground_truth[index]
+            plt.scatter(ground_truth[0, 3],
+                        ground_truth[2, 3],
+                        marker='^',
+                        c='r')
 
         plt.scatter(current_pos[0][0], current_pos[2][0])
         plt.pause(.01)
