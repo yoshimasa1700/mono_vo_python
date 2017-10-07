@@ -44,6 +44,13 @@ def main():
     valid_ground_truth = False
     if dataset.ground_truth is not None:
         valid_ground_truth = True
+
+    if dataset.camera_matrix is not None:
+        camera_matrix = dataset.camera_matrix()
+    else:
+        camera_matrix = np.array([[718.8560, 0.0, 607.1928],
+                                  [0.0, 718.8560, 185.2157],
+                                  [0.0, 0.0, 1.0]])
     
     for index in xrange(dataset.image_count):
         # load image
@@ -65,13 +72,10 @@ def main():
                                                image, points,
                                                None, **lk_params)
 
-        cameraMatrix = np.array([[718.8560, 0.0, 607.1928],
-                                 [0.0, 718.8560, 185.2157],
-                                 [0.0, 0.0, 1.0]])
-        E, mask = cv2.findEssentialMat(p1, points, cameraMatrix, cv2.RANSAC,
-                                       0.999, 1.0, None)
+        E, mask = cv2.findEssentialMat(p1, points, camera_matrix,
+                                       cv2.RANSAC, 0.999, 1.0, None)
 
-        hoge, R, t, mask = cv2.recoverPose(E, p1, points, cameraMatrix)
+        hoge, R, t, mask = cv2.recoverPose(E, p1, points, camera_matrix)
 
         current_pos += current_rot.dot(t)
         current_rot = R.dot(current_rot)
