@@ -49,13 +49,42 @@ class Dataset():
 
             return param
 
+    def load_ground_truth_pose(self, gt_path):
+        ground_truth = None
+        print(gt_path)
+        if not os.path.exists(gt_path):
+            print("ground truth path is not found.")
+            return
 
+        ground_truth = []
+
+        with open(gt_path) as gt_file:
+            gt_lines = gt_file.readlines()
+
+            for gt_line in gt_lines:
+                pose = self.convert_text_to_ground_truth(gt_line)
+                ground_truth.append(pose)
+        return ground_truth
+
+    def convert_text_to_ground_truth(self, gt_line):
+        pass
+
+                
 class KittiDataset(Dataset):
     def __init__(self, path):
         self.image_format_left = '{:06d}.png'
-        self.path = path
-        self.calibfile = os.path.join(self.path, 'calib.txt')
+        self.path = os.path.join(path, 'image_0')
+        self.calibfile = os.path.join(path, 'calib.txt')
+        sequence_count = path.split('/')[-1]
+        gt_path = os.path.join(path, '..', '..',
+                               'poses', sequence_count + '.txt')
+
         self.count_image()
+        self.ground_truth = self.load_ground_truth_pose(gt_path)
+
+    def convert_text_to_ground_truth(self, gt_line):
+        matrix = np.array(gt_line.split()).reshape((3, 4))
+        return matrix
 
 
 dataset_dict = {'kitti': KittiDataset}
