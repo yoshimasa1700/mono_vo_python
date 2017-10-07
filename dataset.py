@@ -73,7 +73,7 @@ class Dataset():
 class KittiDataset(Dataset):
     def __init__(self, path):
         self.image_format_left = '{:06d}.png'
-        self.path = path
+        self.path = os.path.join(path, 'image_0')
         self.calibfile = os.path.join(path, 'calib.txt')
         sequence_count = path.split('/')[-1]
         gt_path = os.path.join(path, '..', '..',
