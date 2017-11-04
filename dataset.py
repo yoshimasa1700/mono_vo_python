@@ -66,9 +66,9 @@ class KittiDataset(Dataset):
         self.image_format_left = '{:06d}.png'
         self.path = os.path.join(path, 'image_0')
         self.calibfile = os.path.join(path, 'calib.txt')
-        sequence_count = os.path.dirname(path).split('/')[-1]
+        sequence_count = os.path.dirname(self.path).split('/')[-1]
 
-        gt_path = os.path.join(path, '..', '..',
+        gt_path = os.path.join(self.path, '..', '..', '..',
                                'poses', sequence_count + '.txt')
 
         self.count_image()
