@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset import create_dataset
+import math
 
 
 def parse_argument():
@@ -19,6 +20,11 @@ def parse_argument():
     parser.add_argument('--path', required=True)
 
     return parser.parse_args()
+
+
+def calc_euclid_dist(p1, p2):
+    a = math.pow((p1[0] - p2[0]), 2.0) + math.pow((p1[1] - p2[1]), 2.0)
+    return math.sqrt(a)
 
 
 def main():
@@ -35,7 +41,15 @@ def main():
     current_pos = np.zeros((3, 1))
     current_rot = np.eye(3)
 
-    plt.gca().set_aspect('equal', adjustable='box')
+    # create graph.
+    position_figure = plt.figure()
+    position_axes = position_figure.add_subplot(1, 1, 1)
+    error_figure = plt.figure()
+    rotation_error_axes = error_figure.add_subplot(1, 1, 1)
+    rotation_error_list = []
+    frame_index_list = []
+
+    position_axes.set_aspect('equal', adjustable='box')
 
     print("{} images found.".format(dataset.image_count))
 
@@ -75,20 +89,44 @@ def main():
         E, mask = cv2.findEssentialMat(p1, points, camera_matrix,
                                        cv2.RANSAC, 0.999, 1.0, None)
 
-        hoge, R, t, mask = cv2.recoverPose(E, p1, points, camera_matrix)
+        points, R, t, mask = cv2.recoverPose(E, p1, points, camera_matrix)
 
-        current_pos += current_rot.dot(t)
+        scale = 1.0
+
+        # calc scale from ground truth if exists.
+        if valid_ground_truth:
+            ground_truth = dataset.ground_truth[index]
+            ground_truth_pos = [ground_truth[0, 3], ground_truth[2, 3]]
+            previous_ground_truth = dataset.ground_truth[index - 1]
+            previous_ground_truth_pos = [
+                previous_ground_truth[0, 3],
+                previous_ground_truth[2, 3]]
+
+            scale = calc_euclid_dist(ground_truth_pos,
+                                     previous_ground_truth_pos)
+
+        current_pos += current_rot.dot(t) * scale
         current_rot = R.dot(current_rot)
 
         # get ground truth if eist.
         if valid_ground_truth:
             ground_truth = dataset.ground_truth[index]
-            plt.scatter(ground_truth[0, 3],
-                        ground_truth[2, 3],
-                        marker='^',
-                        c='r')
+            position_axes.scatter(ground_truth[0, 3],
+                                  ground_truth[2, 3],
+                                  marker='^',
+                                  c='r')
 
-        plt.scatter(current_pos[0][0], current_pos[2][0])
+        # calc rotation error with ground truth.
+        if valid_ground_truth:
+            ground_truth = dataset.ground_truth[index]
+            ground_truth_rotation = ground_truth[0: 3, 0: 3]
+            r_vec, _ = cv2.Rodrigues(current_rot.dot(ground_truth_rotation.T))
+            rotation_error = np.linalg.norm(r_vec)
+            frame_index_list.append(index)
+            rotation_error_list.append(rotation_error)
+            rotation_error_axes.bar(frame_index_list, rotation_error_list)
+
+        position_axes.scatter(current_pos[0][0], current_pos[2][0])
         plt.pause(.01)
 
         img = cv2.drawKeypoints(image, keypoint, None)
@@ -99,6 +137,8 @@ def main():
 
         prev_image = image
         prev_keypoint = keypoint
+    position_figure.savefig("position_plot.png")
+    error_figure.savefig("error.png")
 
 if __name__ == "__main__":
     main()

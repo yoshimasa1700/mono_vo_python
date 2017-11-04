@@ -75,7 +75,7 @@ class KittiDataset(Dataset):
         self.camera_matrix = self.load_camera_parameters(self.calibfile)
 
     def convert_text_to_ground_truth(self, gt_line):
-        matrix = np.array(gt_line.split()).reshape((3, 4))
+        matrix = np.array(gt_line.split()).reshape((3, 4)).astype(np.float32)
         return matrix
 
     def load_camera_parameters(self, calibfile):
