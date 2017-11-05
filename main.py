@@ -124,7 +124,6 @@ def main():
             rotation_error = np.linalg.norm(r_vec)
             frame_index_list.append(index)
             rotation_error_list.append(rotation_error)
-            rotation_error_axes.bar(frame_index_list, rotation_error_list)
 
         position_axes.scatter(current_pos[0][0], current_pos[2][0])
         plt.pause(.01)
@@ -138,6 +137,7 @@ def main():
         prev_image = image
         prev_keypoint = keypoint
     position_figure.savefig("position_plot.png")
+    rotation_error_axes.bar(frame_index_list, rotation_error_list)
     error_figure.savefig("error.png")
 
 if __name__ == "__main__":
