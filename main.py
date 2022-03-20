@@ -59,17 +59,17 @@ def main():
     if dataset.ground_truth is not None:
         valid_ground_truth = True
 
-    if dataset.camera_matrix is not None:
-        camera_matrix = dataset.camera_matrix()
-    else:
-        camera_matrix = np.array([[718.8560, 0.0, 607.1928],
-                                  [0.0, 718.8560, 185.2157],
-                                  [0.0, 0.0, 1.0]])
+
+    #Hardcoded array got through calibrate.py
+    camera_matrix = np.array([[1413.4347186673524, 0.0, 197.17775973897892], [0.0, 1362.6548352426778, 101.78863106601403], [0.0, 0.0, 1.0]]
+)
+
+    print(camera_matrix)
     
     for index in xrange(dataset.image_count):
         # load image
-        image = cv2.imread(dataset.image_path_left(index))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(dataset.image_path_left(index + 1))
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) já feito pelo ffmpeg
 
         # main process
         keypoint = feature_detector.detect(image, None)
@@ -93,37 +93,37 @@ def main():
 
         scale = 1.0
 
-        # calc scale from ground truth if exists.
-        if valid_ground_truth:
-            ground_truth = dataset.ground_truth[index]
-            ground_truth_pos = [ground_truth[0, 3], ground_truth[2, 3]]
-            previous_ground_truth = dataset.ground_truth[index - 1]
-            previous_ground_truth_pos = [
-                previous_ground_truth[0, 3],
-                previous_ground_truth[2, 3]]
+        # # calc scale from ground truth if exists.
+        # if valid_ground_truth:
+        #     ground_truth = dataset.ground_truth[index]
+        #     ground_truth_pos = [ground_truth[0, 3], ground_truth[2, 3]]
+        #     previous_ground_truth = dataset.ground_truth[index - 1]
+        #     previous_ground_truth_pos = [
+        #         previous_ground_truth[0, 3],
+        #         previous_ground_truth[2, 3]]
 
-            scale = calc_euclid_dist(ground_truth_pos,
-                                     previous_ground_truth_pos)
+        #     scale = calc_euclid_dist(ground_truth_pos,
+        #                              previous_ground_truth_pos)
 
         current_pos += current_rot.dot(t) * scale
         current_rot = R.dot(current_rot)
 
-        # get ground truth if eist.
-        if valid_ground_truth:
-            ground_truth = dataset.ground_truth[index]
-            position_axes.scatter(ground_truth[0, 3],
-                                  ground_truth[2, 3],
-                                  marker='^',
-                                  c='r')
+        # # get ground truth if eist.
+        # if valid_ground_truth:
+        #     ground_truth = dataset.ground_truth[index]
+        #     position_axes.scatter(ground_truth[0, 3],
+        #                           ground_truth[2, 3],
+        #                           marker='^',
+        #                           c='r')
 
-        # calc rotation error with ground truth.
-        if valid_ground_truth:
-            ground_truth = dataset.ground_truth[index]
-            ground_truth_rotation = ground_truth[0: 3, 0: 3]
-            r_vec, _ = cv2.Rodrigues(current_rot.dot(ground_truth_rotation.T))
-            rotation_error = np.linalg.norm(r_vec)
-            frame_index_list.append(index)
-            rotation_error_list.append(rotation_error)
+        # # calc rotation error with ground truth.
+        # if valid_ground_truth:
+        #     ground_truth = dataset.ground_truth[index]
+        #     ground_truth_rotation = ground_truth[0: 3, 0: 3]
+        #     r_vec, _ = cv2.Rodrigues(current_rot.dot(ground_truth_rotation.T))
+        #     rotation_error = np.linalg.norm(r_vec)
+        #     frame_index_list.append(index)
+        #     rotation_error_list.append(rotation_error)
 
         position_axes.scatter(current_pos[0][0], current_pos[2][0])
         plt.pause(.01)
